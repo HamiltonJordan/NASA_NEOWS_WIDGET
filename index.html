@@ -20,5 +20,25 @@
         <h1>Bootstrap and jQuery Example</h1>
         <p>This is a simple HTML page that loads Bootstrap and jQuery from CDNs.</p>
     </div>
+
+    <script>
+        // jQuery AJAX GET Request
+        $.ajax({
+            type: "GET", // HTTP method for the request
+            url: "https://api.nasa.gov/neo/rest/v1/feed?api_key=5sQjoGrugpN0sH0tlGweePQV1YdkNL8Ut6GqvGrQ&start_date=2020-01-01&end_date=2020-01-05", // URL to send the request to
+            dataType: "json", // Data type expected from the server
+            success: function(data) {
+                // Callback function to handle the successful response
+                // 'data' will contain the JSON response from the server
+                //$("#result").html("Title: " + data.title);
+                console.log(data);
+            },
+            error: function(xhr, status, error) {
+                // Callback function to handle errors
+                //$("#result").html("Error: " + error);
+                console.log(error);
+            }
+        });
+    </script>
 </body>
 </html>
