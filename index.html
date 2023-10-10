@@ -40,6 +40,7 @@
             <li>Live integration with NASA NeoWs API</li>
             <li>Table is sortable in all columns - click table headings to change asc/desc</li>
             <li>Sorting for datetimes accounts for different time formats for display / sort, sorting all events accurately chronologically</li>
+            <li>Sorting is alphabetic and numeric where appropriate and disabled where appropriate (estimated range column)
             <li>Full text search with 'Search' field</li>
             <li>Interactive date range selector with 'Date Range' field</li>
             <li>Date range selector validation to only allow 7 day date ranges (API limitation) and prevent requests for future dates</li>
@@ -241,7 +242,7 @@
                                 "render": function(data) {
                                     var min = data.estimated_diameter_min;
                                     var max = data.estimated_diameter_max
-                                    return parseFloat(min).toFixed(2) + " - " + parseFloat(max).toFixed(2);
+                                    return "<span style='display:none;'>"+parseFloat(max).toFixed(2)+"</span>"+parseFloat(min).toFixed(2) + " - " + parseFloat(max).toFixed(2);
                                 }
                              },
                              { 
@@ -288,20 +289,26 @@
                         ],
                         'columnDefs': [
                             {
-                                "targets": [3,4,5,6,7,8], // your case first column
+                                "targets": [3,4,5,6,7,8], 
                                 "className": "text-center"
-                           }
+                            },
+                            {
+                                "targets": [6,7,8], 
+                                "className": "text-center",
+                                "type": "num"
+                            },
+                            {
+                                "targets": 3, 
+                                "orderable": false
+                            }
                         ]
                     });
                     
-                    //$("#my_table_filter").insertBefore($("#new_table_filter"), $("#my_table_filter").firstChild);
                     $("#my_table_filter").prepend($("#new_table_filter"));
 
-                    //$viewer.html(JSON.stringify($api_response_obj));
                 },
                 error: function(xhr, status, error) {
                     // Callback function to handle errors
-                    //$("#result").html("Error: " + error);
                     console.log(error);
                     alert("Error fetching API data from https://api.nasa.gov");
                 }
