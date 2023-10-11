@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bootstrap and jQuery Example</title>
+    <title>NASA API Widget - Jordan Hamilton</title>
     
     <!-- Latest Bootstrap CSS from CDN -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
@@ -60,7 +60,7 @@
         <hr />
         <label id="new_table_filter" style="margin-right: 20px;" >
             Date Range:
-            <input type="text" id="my_range_picker" class="" placeholder="" aria-controls="my_table" style="width: 250px;"></label>
+            <input type="text" id="my_range_picker" class="" placeholder="" aria-controls="my_table" style="width: 250px;">
         </label>
         <table id="my_table" class="cell-border">
         
@@ -118,7 +118,7 @@
 
         $(document).ready( function () {
 
-            // Get the current date
+            // Get the current date and assign default window values
             const window_end_default_date = new Date();
 
             // Calculate the date 7 days ago
@@ -139,6 +139,7 @@
                 window_end_date = window_end_default_date;
             }
 
+            // Daterangepicker configuration
             $("#my_range_picker").daterangepicker({
                 "maxSpan": {
                     "days": 7
@@ -148,9 +149,9 @@
                 "endDate": formatDatePretty(window_end_date)
             });
 
+            // Event listener for daterangepicker to trigger page reload with new url parameters
             $("#my_range_picker").change(function(){
                 var new_date_range = $(this).val();
-                console.log("new range = " + new_date_range);
                 var dates = new_date_range.split(' - ');
                 if (dates.length !== 2) {
                     // Invalid date format
@@ -161,9 +162,9 @@
                     var target_end = encodeURIComponent(dates[1]);
                     window.location.href = window.location.href.split('?')[0] + "?target_start=" + target_start + "&target_end=" + target_end;
                 }
-                //location.reload();
             })
 
+            // Initiallize event list and response slot
             $api_response_obj = {};
             $event_list = [];
             
@@ -171,17 +172,16 @@
             // Get the formatted dates
             const window_end_iso   = formatDateISO(window_end_date);
             const window_start_iso  = formatDateISO(window_start_date);
-
+            const API_KEY = "5sQjoGrugpN0sH0tlGweePQV1YdkNL8Ut6GqvGrQ";
 
             // jQuery AJAX GET Request
             $.ajax({
                 type: "GET", // HTTP method for the request
-                url: "https://api.nasa.gov/neo/rest/v1/feed?api_key=5sQjoGrugpN0sH0tlGweePQV1YdkNL8Ut6GqvGrQ&start_date="+window_start_iso+"&end_date="+window_end_iso, // URL to send the request to
+                url: "https://api.nasa.gov/neo/rest/v1/feed?api_key="+API_KEY+"&start_date="+window_start_iso+"&end_date="+window_end_iso, // URL to send the request to
                 dataType: "json", // Data type expected from the server
                 success: function(data) {
                     // Callback function to handle the successful response
                     // 'data' will contain the JSON response from the server
-                    //$("#result").html("Title: " + data.title);
                     $api_response_obj = data;
                     $near_earth_objects = $api_response_obj.near_earth_objects;
 
@@ -192,56 +192,65 @@
                         });                  
                     });
 
+                    // Configure datatables object and assign data targets / display values / sort methods
+                    // Configuration instructions available at https://datatables.net/manual/data/
                     $('#my_table').DataTable({
                         "data": $event_list,
                         "columns": [
                             {
-                                "data": "close_approach_data",
-                                "render": function(data) {
-                                    var epoch_time = data[0].epoch_date_close_approach;
-                                    var date_time = data[0].close_approach_date;
-                                    var date_time_full = data[0].close_approach_date_full;
+                                "data": {
+                                    _:"close_approach_data",
+                                    sort: "close_approach_data[0].epoch_date_close_approach"
+                                },
+                                "render": function(data, type, row ) {
+                                    if (type == "display" || type == "filter"){
+                                        const epoch_time = data[0].epoch_date_close_approach;
+                                        const date_time = data[0].close_approach_date;
+                                        const date_time_full = data[0].close_approach_date_full;
 
-                                    var date_parts = date_time.split('-');
-                                    if (date_parts.length !== 3) {
-                                        // Invalid date format
-                                        console.log('Invalid Date');
-                                        return 'Invalid Date';
+                                        const date_parts = date_time.split('-');
+                                        if (date_parts.length !== 3) {
+                                            // Invalid date format
+                                            console.log('Invalid Date');
+                                            return 'Invalid Date';
+                                        }
+
+                                        const time_parts = date_time_full.split(' ');
+                                        if (time_parts.length !== 2) {
+                                            // Invalid date format
+                                            console.log('Invalid Time');
+                                            return 'Invalid Time';
+                                        }
+
+                                        const year = date_parts[0];
+                                        const month = date_parts[1];
+                                        const day = date_parts[2];
+                                        const time = time_parts[1];
+
+                                        // Create a new date object with the parsed values
+                                        const formattedDate = new Date(year, month - 1, day);
+
+                                        // Use date methods to get the month, day, and year components
+                                        const formattedMonth = (formattedDate.getMonth() + 1).toString();
+                                        const formattedDay = formattedDate.getDate().toString();
+                                        const formattedYear = formattedDate.getFullYear().toString();
+
+                                        // Combine the components into the desired format (M/D/Y)
+                                        $pretty_date = `${formattedMonth}/${formattedDay}/${formattedYear} ${time}`;
+                                        //return "<span style='display:none;'>"+epoch_time+"</span>"+$pretty_date;
+                                        return $pretty_date;
                                     }
-
-                                    const time_parts = date_time_full.split(' ');
-                                    if (time_parts.length !== 2) {
-                                        // Invalid date format
-                                        console.log('Invalid Time');
-                                        return 'Invalid Time';
-                                    }
-
-                                    const year = date_parts[0];
-                                    const month = date_parts[1];
-                                    const day = date_parts[2];
-                                    const time = time_parts[1];
-
-                                    // Create a new date object with the parsed values
-                                    const formattedDate = new Date(year, month - 1, day);
-
-                                    // Use date methods to get the month, day, and year components
-                                    const formattedMonth = (formattedDate.getMonth() + 1).toString();
-                                    const formattedDay = formattedDate.getDate().toString();
-                                    const formattedYear = formattedDate.getFullYear().toString();
-
-                                    // Combine the components into the desired format (M/D/Y)
-                                    $pretty_date = `${formattedMonth}/${formattedDay}/${formattedYear} ${time}`;
-                                    return "<span style='display:none;'>"+epoch_time+"</span>"+$pretty_date;
-
+                                    return data;
                                 }
+
                             },
                             { "data": "id" },
                             { "data": "name" },
                             { 
                                 "data": "estimated_diameter.meters",
                                 "render": function(data) {
-                                    var min = data.estimated_diameter_min;
-                                    var max = data.estimated_diameter_max
+                                    const min = data.estimated_diameter_min;
+                                    const max = data.estimated_diameter_max
                                     return "<span style='display:none;'>"+parseFloat(max).toFixed(2)+"</span>"+parseFloat(min).toFixed(2) + " - " + parseFloat(max).toFixed(2);
                                 }
                              },
@@ -304,6 +313,8 @@
                         ]
                     });
                     
+                    // UI tweak, move date range selector to be inside of rendered table to be alongside search tool
+                    // MUST HAPPEN AFTER TABLE RENDER
                     $("#my_table_filter").prepend($("#new_table_filter"));
 
                 },
